@@ -23,11 +23,12 @@ missing. Please check the installation instructions for
 
 ## Exercises
 
-[Exercise 1](Exercise-1.md) introduces the syntax of functions in Kotlin
+[Exercise 1](src/docs/Exercise-1.md) introduces the syntax of functions in 
+Kotlin
 
-[Exercise 2](Exercise-2.md) goes into the higher-order functions and composition
+[Exercise 2](src/docs/Exercise-2.md) goes into the higher-order functions and composition
 
-[Exercise 3](Exercise-3.md) introduces Atom
+[Exercise 3](src/docs/Exercise-3.md) introduces Arrow
 
 ## Testing your code
 

@@ -27,8 +27,8 @@ the main flow.
 So, for a small exercise using `Either` we can create some methods that will 
 showcase exception handling.
 
-Firstly we create a method that converts a `Price` into another currency.
-For that we can use a conversion map like this one:
+Firstly we need some way of converting a currency into 
+another currency. For that we can use a conversion map like this one:
 ```kotlin
 val conversionMap = mapOf<Pair<String,String>,Double>(
     ("£" to "$") to 1.25,
@@ -178,8 +178,10 @@ fun odd(v: Int): Boolean =
     if (v == 0) false
     else even(v - 1)
 
-// Blow it up
-println(odd(100_000_001))
+fun main() {
+    // Blow it up
+    println(odd(100_000_001))
+}
 ```
 
 So, let's rewrite above code using `Eval`, and here's a start:
@@ -189,4 +191,91 @@ fun even(v: Int): Eval(Boolean) =
         TODO()
     }
 
+fun main() {
+    // Smooth like butter
+    println(odd(100_000_001).value())
+}
 ```
+
+## Effect
+`interface Effect<R, A>`
+
+`Effect` is a `suspend` function that encapsulates the resulting value `A` and 
+an exceptional result `R`.
+
+To write an `Effect` we will use the constructor method `effect` to 
+encapsulate the logic.
+
+The DSL for building effect also has function `shift` for _shifting out of 
+the normal flow_ and returning the exceptional result.
+It also contains validator functions like `ensure(condition) { .. }` that, in 
+case the condition is not satisfied, will shift the result from the lambda.
+
+### Exercise
+To have a look at the way that `Effect` can be used, we create a small 
+function that reads a file.
+
+Take the following code, and let's build on it:
+```kotlin
+object InvalidPath
+
+fun readFile(path: String): Effect<InvalidPath,Unit> = effect {
+    if (path.isBlank()) shift(InvalidPath)
+    else Unit
+}
+```
+
+Now we can improve on this by using some `ensure` methods.
+```kotlin
+fun readFile(path: String): Effect<InvalidPath,Unit> = effect {
+    ensure(path.isNotBlank()) { InvalidPath }
+    Unit
+}
+```
+
+You could also change the function to accept a nullable value `path: String?
+` and add another `ensure` to make sure that the value is actually not null.
+
+
+Next step is to actually read the content of a file. Reading a file can 
+cause other exceptional circumstances, so we can model those other 
+situations like so:
+```kotlin
+sealed class FileError {
+    object InvalidPath: FileError()
+    object FileNotFound: FileError()
+    object SecurityError: FileError()
+}
+```
+
+And we have to ensure we can capture the file content. For that we use a 
+simple class that encapuslates the content as a list of strings:
+```kotlin
+class Content(val body: List<String>)
+```
+
+So continuing from the `readFile` function we should expand it with actual 
+`File(path).readLines()` capability:
+```kotlin
+fun readFile(path: String): Effect<FileError,Content> = effect {
+    ensure(path.isNotBlank()) { FileError.InvalidPath }
+    try {
+        File(path).readLines()
+    } catch (e: FileNotFoundException) {
+        TODO()
+    }
+}
+```
+
+And to invoke this method, and you should try that for valid and invalid 
+paths, we can for instance take the resulting effect and convert it to a 
+`Either` like so (note that main is now also a `suspend` function):
+```kotlin
+suspend fun main() {
+    val result = readFile("gradle.properties").toEither()
+    when(result) {
+        TODO()
+    }
+}
+```
+
